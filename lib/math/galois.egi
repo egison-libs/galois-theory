@@ -1,12 +1,24 @@
 ;;;
 ;;; Group Theory
 ;;;
-
 (define $group (set G.element))
 
 (define $G.element (list integer))
 
-(define $G.multiply
+(define $G.view
+  (lambda [$e]
+    (match-all (zip (between 1 (length e)) e) (list [integer integer])
+      [<join _ <cons [$x (& ^,x $y)] _>>
+       [x y]])))
+
+;;
+;; Basic operations
+;;
+(define $G.id
+  (lambda [$n]
+    (between 1 n)))
+
+(define $G.*
   (lambda [$e1 $e2]
     (map (lambda [$x] (nth x e1)) e2)))
 
@@ -14,80 +26,118 @@
   (lambda [$e $n]
     (if (eq? n 1)
       e
-      (G.multiply (G.power e (- n 1)) e))))
+      (G.* (G.power e (- n 1)) e))))
 
 (define $G.reverse
   (lambda [$e]
     (map (lambda [$x $y] x)
-         (qsort/f (match-lambda [[integer integer] [integer integer]] {[[[_ $m] [_ $n]] (compare m n)]})
-                  (zip (between 1 (length e)) e)))))
-
-(define $G.id? (lambda [$e] (eq? e (between 1 (length e)))))
-
-(define $unit-group? (match-lambda (list something) {[<cons _ <nil>> #t] [_ #f]}))
+         (qsort/fn (match-lambda [[integer integer] [integer integer]] {[[[_ $m] [_ $n]] (compare m n)]})
+                   (zip (G.id (length e)) e)))))
 
 (define $G.eq? (eq?/m (multiset G.element) $ $))
+
+(define $G.id?
+  (lambda [$e]
+    (eq? e (between 1 (length e)))))
 
 (define $G.group?
   (lambda [$g]
     (all id
          (match-all g group
            [<cons $e1 <cons $e2 _>>
-            (member? (G.multiply e1 e2) g)]))))
+            (member? (G.* e1 e2) g)]))))
 
-(define $gen-symmetric-group
+(define $unit-group? (match-lambda (list something) {[<cons _ <nil>> #t] [_ #f]}))
+
+;;
+;; Symmetric groups
+;;
+(define $symmetric-group
   (lambda [$n]
     (match-all (between 1 n) (multiset integer)
       [(loop $i [1 n] <cons $a_i ...> <nil>)
        (map (lambda [$i] a_i) (between 1 n))])))
 
-(define $s3 (gen-symmetric-group 3))
-(define $s4 (gen-symmetric-group 4))
-(define $s5 (gen-symmetric-group 5))
+(define $s3 (symmetric-group 3))
+(define $s4 (symmetric-group 4))
+(define $s5 (symmetric-group 5))
 
+;;
+;; Normal groups
+;;
 (define $normal-subgroup?
   (lambda [$h $g]
     (all id
          (map (lambda [$x]
-                (G.eq? (map (G.multiply x $) h)
-                       (map (G.multiply $ x) h)))
+                (G.eq? (map (G.* x $) h)
+                       (map (G.* $ x) h)))
               g))))
 
+;;
+;; Cyclic groups
+;;
 (define $gen-cyclic-group
   (lambda [$e]
-    {@(while (lambda [$e] (not (G.id? e))) (map (G.power e $) nats)) (between 1 (length e))}))
+    {@(while 1#(not (G.id? %1))
+             (map (G.power e $) nats))
+     (G.id (length e))}))
 
-(define $cyclic-groups
+(define $cyclic-subgroups
   (lambda [$g]
     (unique/m (multiset G.element)
               (map (gen-cyclic-group $)
                    g))))
 
-(define $origins
+(define $generators
   (lambda [$g]
-    (filter (lambda [$e] (not (G.id? e)))
-            (map car (cyclic-groups g)))))
+    (map car (cyclic-subgroups g))))
 
-(define $gen-group-from-origins
-  (lambda [$os]
-    (car (match-all
-           (scanl (lambda [$os $es] (unique {@es @(concat (map (lambda [$o] (map (G.multiply $ o) es)) os))})) os (repeat1 os))
-           (list G.element)
-           [<join _ <cons $g <cons ,g _>>> g]))))
-
-(define $gen-subgroups2
-  (lambda [$g]
-    (match-all (origins g) (list G.element)
-      [<join _ <cons $e1 <join _ <cons $e2 _>>>> (let {[$g2 (gen-group-from-origins {e1 e2})]}
-                                                   [(normal-subgroup? g2 g) g2])])))
+(define $gen-group
+  (lambda [$es]
+    (let {[$cgs (map gen-cyclic-group es)]}
+      (foldl G.** (car cgs) (cdr cgs)))))
 
 ;;
-;; Naive implementations
+;; Group Binary Operation
 ;;
-(define $subgroups
-  (lambda [$g]
-    (filter G.group? (match-all g (multiset something) [<join $g1 _> g1]))))
+(define $G.**
+  (lambda [$g1 $g2]
+    (unique (match-all [g1 g2] [(multiset something) (multiset something)]
+              [[<cons $e1 _> <cons $e2 _>] (G.* e1 e2)]))))
 
-(define $normal-subgroups
+(define $G.//
+  (lambda [$g1 $g2]
+    (let {[$hs (difference/m (multiset G.element) (cyclic-subgroups g1) (cyclic-subgroups g2))]}
+      (car (concat (map (lambda [$h]
+                          (let {[$g2' (G.** h g2)]}
+                            (if (include?/m (multiset G.element) g1 g2')
+                              (if (include?/m (multiset G.element) g2' g1)
+                                {h}
+                                {(G.** h (G.// g1 g2'))})
+                              {})))
+                        hs))))))
+
+;;
+;; Commutator
+;;
+(define $commutator
+  (lambda [$e1 $e2]
+    (G.* (G.* (G.reverse e1) (G.reverse e2))
+         (G.* e1 e2))))
+
+(define $commutator-subgroup
   (lambda [$g]
-    (filter (normal-subgroup? $ g) (subgroups g))))
+    (gen-group (unique (match-all g (multiset something)
+                         [<cons $e1 <cons $e2 _>> (commutator e1 e2)])))))
+
+;;
+;; Predicate on commutativity
+;;
+(define $abelian-group?
+  (lambda [$g]
+    (unit-group? (commutator-subgroup g))))
+
+(define $perfect-group?
+  (lambda [$g]
+    (eq? (length g)
+         (length (commutator-subgroup g)))))
