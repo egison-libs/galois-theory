@@ -47,8 +47,6 @@
            [<cons $e1 <cons $e2 _>>
             (member? (G.* e1 e2) g)]))))
 
-(define $unit-group? (match-lambda (list something) {[<cons _ <nil>> #t] [_ #f]}))
-
 ;;
 ;; Symmetric groups
 ;;
@@ -61,6 +59,11 @@
 (define $s3 (symmetric-group 3))
 (define $s4 (symmetric-group 4))
 (define $s5 (symmetric-group 5))
+
+(define $a3 (commutator-subgroup s3))
+(define $a4 (commutator-subgroup s4))
+
+(define $v4 (commutator-subgroup a4))
 
 ;;
 ;; Normal groups
@@ -94,16 +97,22 @@
 
 (define $gen-group
   (lambda [$es]
-    (let {[$cgs (map gen-cyclic-group es)]}
-      (foldl G.** (car cgs) (cdr cgs)))))
+    (let {[$es2 (unique (match-all es group [<cons $e1 <cons $e2 _>> (G.* e1 e2)]))]}
+      (if (eq? (length es) (length es2))
+        es
+        (gen-group es2)))))
 
 ;;
 ;; Group Binary Operation
 ;;
+(define $G.product
+  (lambda [$g1 $g2]
+    (unique (match-all [g1 g2] [group group]
+              [[<cons $e1 _> <cons $e2 _>] (G.* e1 e2)]))))
+
 (define $G.**
   (lambda [$g1 $g2]
-    (unique (match-all [g1 g2] [(multiset something) (multiset something)]
-              [[<cons $e1 _> <cons $e2 _>] (G.* e1 e2)]))))
+    (gen-group (unique {@g1 @g2}))))
 
 (define $G.//
   (lambda [$g1 $g2]
@@ -127,15 +136,21 @@
 
 (define $commutator-subgroup
   (lambda [$g]
-    (gen-group (unique (match-all g (multiset something)
+    (gen-group (unique (match-all g group
                          [<cons $e1 <cons $e2 _>> (commutator e1 e2)])))))
+
+(define $commutators
+  (lambda [$g]
+    (match-all g group
+      [<cons $e1 <cons $e2 _>> [e1 e2 (commutator e1 e2)]])))
 
 ;;
 ;; Predicate on commutativity
 ;;
 (define $abelian-group?
   (lambda [$g]
-    (unit-group? (commutator-subgroup g))))
+    (eq? 1
+         (length (commutator-subgroup g)))))
 
 (define $perfect-group?
   (lambda [$g]
