@@ -1,3 +1,3 @@
 #!/bin/sh
 
-rm ~/.egison/lib/math/galois.egi
+rm ~/.egison/lib/math/symmetric-group.egi
