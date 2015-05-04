@@ -5,12 +5,6 @@
 
 (define $G.element (list integer))
 
-(define $G.view
-  (lambda [$e]
-    (match-all (zip (between 1 (length e)) e) (list [integer integer])
-      [<join _ <cons [$x (& ^,x $y)] _>>
-       [x y]])))
-
 ;;
 ;; Basic operations
 ;;
@@ -20,7 +14,7 @@
 
 (define $G.*
   (lambda [$e1 $e2]
-    (map (lambda [$x] (nth x e1)) e2)))
+    (map (nth $ e1) e2)))
 
 (define $G.power
   (lambda [$e $n]
@@ -30,15 +24,15 @@
 
 (define $G.reverse
   (lambda [$e]
-    (map (lambda [$x $y] x)
-         (qsort/fn (match-lambda [[integer integer] [integer integer]] {[[[_ $m] [_ $n]] (compare m n)]})
+    (map 2#%1
+         (qsort/fn 2#(compare (2#%2 %1) (2#%2 %2))
                    (zip (G.id (length e)) e)))))
 
-(define $G.eq? (eq?/m (multiset G.element) $ $))
+(define $G.eq? (eq?/m group $ $))
 
 (define $G.id?
   (lambda [$e]
-    (eq? e (between 1 (length e)))))
+    (eq? e (G.id (length e)))))
 
 (define $G.group?
   (lambda [$g]
@@ -81,13 +75,11 @@
 ;;
 (define $gen-cyclic-group
   (lambda [$e]
-    {@(while 1#(not (G.id? %1))
-             (map (G.power e $) nats))
-     (G.id (length e))}))
+    (until-by (G.id? $) (map (G.power e $) nats))))
 
 (define $cyclic-subgroups
   (lambda [$g]
-    (unique/m (multiset G.element)
+    (unique/m group
               (map (gen-cyclic-group $)
                    g))))
 
@@ -138,11 +130,6 @@
   (lambda [$g]
     (gen-group (unique (match-all g group
                          [<cons $e1 <cons $e2 _>> (commutator e1 e2)])))))
-
-(define $commutators
-  (lambda [$g]
-    (match-all g group
-      [<cons $e1 <cons $e2 _>> [e1 e2 (commutator e1 e2)]])))
 
 ;;
 ;; Predicate on commutativity
