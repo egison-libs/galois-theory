@@ -16,17 +16,11 @@
   (lambda [$e1 $e2]
     (map (nth $ e1) e2)))
 
-(define $G.power
-  (lambda [$e $n]
-    (if (eq? n 1)
-      e
-      (G.* (G.power e (- n 1)) e))))
-
 (define $G.reverse
   (lambda [$e]
-    (map 2#%1
-         (qsort/fn 2#(compare (2#%2 %1) (2#%2 %2))
-                   (zip (G.id (length e)) e)))))
+    (map 2#%2
+         (sort/fn 2#(compare (2#%1 %1) (2#%1 %2))
+                  (zip e (G.id (length e)))))))
 
 (define $G.eq? (eq?/m group $ $))
 
@@ -34,12 +28,33 @@
   (lambda [$e]
     (eq? e (G.id (length e)))))
 
-(define $G.group?
+(define $group?
   (lambda [$g]
-    (all id
-         (match-all g group
-           [<cons $e1 <cons $e2 _>>
-            (member? (G.* e1 e2) g)]))))
+    (and (any G.id? g)
+         (and (all (member? $ g) (map G.reverse g))
+              (all (member? $ g)
+                   (match-all g group
+                     [<cons $e1 <cons $e2 _>> (G.* e1 e2)]))))))
+
+;;
+;; View
+;;
+(define $G.to-cycles
+  (lambda [$e]
+    (match (match-all (zip (G.id (length e)) e) (multiset [integer integer])
+             [<cons [$m (& ^,m $n)] _> [m n]])
+             (multiset [integer integer])
+      {[(loop $i [1 $m]
+          <cons [$x_i_1 $x_i_2]
+           (loop $j [3 $n_i]
+             <cons [,x_i_(- j 1) $x_i_j] ...>
+             <cons [,x_i_(ref n i) ,x_i_1] ...>)>
+          <nil>)
+        (map (lambda [$i] (map (lambda [$j] x_i_j) (between 1 n_i))) (between 1 m))]})))
+
+(define $G.from-cycles
+  (lambda [$cs]
+    (map 1#(sort/fn 2#(compare (2#%1 %1) (2#%1 %2)) (zip {(rac %1) @(rdc %1)} %1)) cs)))
 
 ;;
 ;; Symmetric groups
@@ -56,6 +71,7 @@
 
 (define $a3 (commutator-subgroup s3))
 (define $a4 (commutator-subgroup s4))
+(define $a5 (commutator-subgroup s5))
 
 (define $v4 (commutator-subgroup a4))
 
@@ -64,10 +80,8 @@
 ;;
 (define $normal-subgroup?
   (lambda [$h $g]
-    (all id
-         (map (lambda [$x]
-                (G.eq? (map (G.* x $) h)
-                       (map (G.* $ x) h)))
+    (all G.eq?
+         (map 1#[(map (G.* %1 $) h) (map (G.* $ %1) h)]
               g))))
 
 ;;
@@ -75,7 +89,7 @@
 ;;
 (define $gen-cyclic-group
   (lambda [$e]
-    (until-by (G.id? $) (map (G.power e $) nats))))
+    (until-by (G.id? $) (scanl G.* e (repeat1 e)))))
 
 (define $cyclic-subgroups
   (lambda [$g]
@@ -89,13 +103,11 @@
 
 (define $gen-group
   (lambda [$es]
-    (let {[$es2 (unique (match-all es group [<cons $e1 <cons $e2 _>> (G.* e1 e2)]))]}
-      (if (eq? (length es) (length es2))
-        es
-        (gen-group es2)))))
+    (let {[$cgs (map gen-cyclic-group es)]}
+      (foldl G.** (car cgs) (cdr cgs)))))
 
 ;;
-;; Group Binary Operation
+;; Binary operation
 ;;
 (define $G.product
   (lambda [$g1 $g2]
@@ -104,15 +116,18 @@
 
 (define $G.**
   (lambda [$g1 $g2]
-    (gen-group (unique {@g1 @g2}))))
+    (let {[$pg (G.product g1 g2)]}
+      (match (scanl 2#(let {[$ng (union (2#%1 %1) (G.product (2#%2 %1) %2))]} [ng (difference ng (2#%1 %1))]) [pg pg] (repeat1 pg))
+             (list [group (set G.element)])
+        {[<join _ <cons [$g <nil>]  _>> g]}))))
 
 (define $G.//
   (lambda [$g1 $g2]
     (let {[$hs (difference/m (multiset G.element) (cyclic-subgroups g1) (cyclic-subgroups g2))]}
       (car (concat (map (lambda [$h]
                           (let {[$g2' (G.** h g2)]}
-                            (if (include?/m (multiset G.element) g1 g2')
-                              (if (include?/m (multiset G.element) g2' g1)
+                            (if (include?/m group g1 g2')
+                              (if (include?/m group g2' g1)
                                 {h}
                                 {(G.** h (G.// g1 g2'))})
                               {})))
@@ -128,8 +143,11 @@
 
 (define $commutator-subgroup
   (lambda [$g]
-    (gen-group (unique (match-all g group
-                         [<cons $e1 <cons $e2 _>> (commutator e1 e2)])))))
+    (letrec {[$es (unique (match-all g group
+                            [<cons $e1 <cons $e2 _>> (commutator e1 e2)]))]}
+      (if (group? es)
+        es
+        (gen-group es)))))
 
 ;;
 ;; Predicate on commutativity
