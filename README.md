@@ -7,7 +7,11 @@
 > s3
 {{1 2 3} {1 3 2} {2 1 3} {2 3 1} {3 1 2} {3 2 1}}
 > (cyclic-subgroups s3)
-{{{1 2 3}} {{1 3 2} {1 2 3}} {{2 1 3} {1 2 3}} {{2 3 1} {3 1 2} {1 2 3}} {{3 2 1} {1 2 3}}}
+{{{1 2 3}}
+ {{1 3 2} {1 2 3}}
+ {{2 1 3} {1 2 3}}
+ {{2 3 1} {3 1 2} {1 2 3}}
+ {{3 2 1} {1 2 3}}}
 > (normal-subgroup? {{1 2 3}} s3)
 #t
 > (normal-subgroup? {{1 3 2} {1 2 3}} s3)
@@ -18,14 +22,132 @@
 {{1 2 3} {2 3 1} {3 1 2}}
 > (commutator-subgroup {{1 2 3} {2 3 1} {3 1 2}})
 {{1 2 3}}
-> (commutator-subgroup s4)
-{{1 2 3 4} {1 3 4 2} {1 4 2 3} {2 3 1 4} {3 1 2 4} {4 1 3 2} {2 4 3 1} {4 3 2 1} {3 2 4 1} {4 2 1 3} {3 4 1 2} {2 1 4 3}}
-> (commutator-subgroup {{1 2 3 4} {1 3 4 2} {1 4 2 3} {2 3 1 4} {3 1 2 4} {4 1 3 2} {2 4 3 1} {4 3 2 1} {3 2 4 1} {4 2 1 3} {3 4 1 2} {2 1 4 3}})
-{{1 2 3 4} {4 3 2 1} {3 4 1 2} {2 1 4 3}}
-> (commutator-subgroup {{1 2 3 4} {4 3 2 1} {3 4 1 2} {2 1 4 3}})
-{{1 2 3 4}}
 ```
 
+## Function List
+
+### `G.id`
+
+```
+> (G.id 3)
+{1 2 3}
+> (G.id 4)
+{1 2 3 4}
+```
+
+### `G.*`
+
+```
+> (G.* {1 2 3} {3 1 2})
+{3 1 2}
+> (G.* {2 1 3} {3 1 2})
+{3 2 1}
+> (G.* {3 1 2} {2 1 3})
+{1 3 2}
+```
+
+### `G.reverse`
+
+```
+> (G.reverse {2 1 3 4})
+{2 1 3 4}
+> (G.reverse {4 1 2 3})
+{2 3 4 1}
+```
+
+### `G.to-cycles`
+
+```
+> (G.to-cycles {3 1 2 4})
+{{1 3 2}}
+> (G.to-cycles {2 1 4 3})
+{{1 2} {3 4}}
+```
+
+### `symmetric-group`
+
+```
+> (symmetric-group 3)
+{{1 2 3} {1 3 2} {2 1 3} {2 3 1} {3 1 2} {3 2 1}}
+> (symmetric-group 4)
+{{1 2 3 4} {1 2 4 3} {1 3 2 4} {2 1 3 4} {1 3 4 2} {1 4 2 3} {2 1 4 3} {2 3 1 4}
+ {3 1 2 4} {1 4 3 2} {2 3 4 1} {2 4 1 3} {3 1 4 2} {3 2 1 4} {4 1 2 3} {2 4 3 1}
+ {3 2 4 1} {3 4 1 2} {4 1 3 2} {4 2 1 3} {3 4 2 1} {4 2 3 1} {4 3 1 2} {4 3 2 1}}
+```
+
+### `s3`, `s4`, `s5`
+
+`s3` is the symmetric group with 3 symobols.
+
+`s4` is the symmetric group with 4 symobols.
+
+`s5` is the symmetric group with 5 symobols.
+
+### `a3`, `a4`, `a5`
+
+`a3` is the alternating group of `s3`.
+
+`a4` is the alternating group of `s4`.
+
+`a5` is the alternating group of `s5`.
+
+### `v4`
+
+`v4` is Klein four-group.
+
+```
+> v4
+{{1 2 3 4} {2 1 4 3} {3 4 1 2} {4 3 2 1}}
+```
+
+### `normal-subgroup?`
+
+```
+> (normal-subgroup? a3 s3)
+#t
+> (normal-subgroup? {{2 1 3} {1 2 3}} s3)
+#f
+> (normal-subgroup? a4 v4)
+#t
+```
+
+### `gen-cyclic-group`
+
+```
+> (gen-cyclic-group {2 1 3})
+{{2 1 3} {1 2 3}}
+> (gen-cyclic-group {2 3 1})
+{{2 3 1} {3 1 2} {1 2 3}}
+```
+
+### `cyclic-subgroups`
+
+```
+(cyclic-subgroups s3)
+{{{1 2 3}}
+ {{1 3 2} {1 2 3}}
+ {{2 1 3} {1 2 3}}
+ {{2 3 1} {3 1 2} {1 2 3}}
+ {{3 2 1} {1 2 3}}}
+```
+
+### `generators`
+
+### `gen-group`
+
+### `G.product`
+
+### `G.**`
+
+### `G.//`
+
+### `commutator`
+
+### `commutator-subgroup`
+
+### `abelian-group?`
+
+### `perfect-group?`
 
 ## LICENSE
 

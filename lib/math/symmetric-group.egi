@@ -18,9 +18,11 @@
 
 (define $G.reverse
   (lambda [$e]
-    (map 2#%2
-         (sort/fn 2#(compare (2#%1 %1) (2#%1 %2))
-                  (zip e (G.id (length e)))))))
+    (match (zip e (G.id (length e))) (multiset [integer integer])
+      {[(loop $i [1 (length e)]
+          <cons [,i $x_i] ...>
+          <nil>)
+        (map (ref x $) (between 1 (length e)))]})))
 
 (define $G.eq? (eq?/m group $ $))
 
@@ -51,10 +53,6 @@
              <cons [,x_i_(ref n i) ,x_i_1] ...>)>
           <nil>)
         (map (lambda [$i] (map (lambda [$j] x_i_j) (between 1 n_i))) (between 1 m))]})))
-
-(define $G.from-cycles
-  (lambda [$cs]
-    (map 1#(sort/fn 2#(compare (2#%1 %1) (2#%1 %2)) (zip {(rac %1) @(rdc %1)} %1)) cs)))
 
 ;;
 ;; Symmetric groups
@@ -138,8 +136,8 @@
 ;;
 (define $commutator
   (lambda [$e1 $e2]
-    (G.* (G.* (G.reverse e1) (G.reverse e2))
-         (G.* e1 e2))))
+    (G.* (G.* e1 e2)
+         (G.* (G.reverse e1) (G.reverse e2)))))
 
 (define $commutator-subgroup
   (lambda [$g]
