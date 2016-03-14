@@ -1,4 +1,4 @@
 #!/bin/sh
 
-mkdir -p ~/.egison/lib/math
-cp lib/math/symmetric-group.egi ~/.egison/lib/math
+mkdir -p ~/.egison/lib/math/algebra
+cp lib/math/algebra/symmetric-group.egi ~/.egison/lib/math/algebra

@@ -44,7 +44,7 @@
 (define $G.to-cycles
   (lambda [$e]
     (match (match-all (zip (G.id (length e)) e) (multiset [integer integer])
-             [<cons [$m (& ^,m $n)] _> [m n]])
+             [<cons [$m (& !,m $n)] _> [m n]])
              (multiset [integer integer])
       {[(loop $i [1 $m]
           <cons [$x_i_1 $x_i_2]
