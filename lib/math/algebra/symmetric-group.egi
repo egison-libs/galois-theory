@@ -22,7 +22,7 @@
       {[(loop $i [1 (length e)]
           <cons [,i $x_i] ...>
           <nil>)
-        (map (ref x $) (between 1 (length e)))]})))
+        (map 1#x_%1 (between 1 (length e)))]})))
 
 (define $G.eq? (eq?/m group $ $))
 
@@ -87,7 +87,7 @@
 ;;
 (define $gen-cyclic-group
   (lambda [$e]
-    (until-by (G.id? $) (scanl G.* e (repeat1 e)))))
+    (take-until-by (G.id? $) (scanl G.* e (repeat1 e)))))
 
 (define $cyclic-subgroups
   (lambda [$g]
