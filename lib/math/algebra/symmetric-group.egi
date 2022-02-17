@@ -12,8 +12,6 @@ def G.reverse $e :=
         ((#i, $x_i) :: ...)
         [] -> map 1#x_%1 [1..(length e)]
 
-def G.eq := 2#(eqAs group %1 %2)
-
 def G.isId $e := e = G.id (length e)
 
 def isGroup $g :=
@@ -54,7 +52,12 @@ def a5 := commutatorSubgroup s5
 def v4 := commutatorSubgroup a4
 
 def isNormalSubgroup $h $g :=
-  all G.eq (map 1#(map 1#(G.* %1 %1) h, map 1#(G.* %1 %1) h) g)
+  all (\(g1, g2) -> eqAs group g1 g2) (map (\ge -> (map (\he -> G.* ge he) h, map (\he -> G.* he ge) h)) g)
+
+def takeUntilBy p xs :=
+ match xs as list something with
+   | $hs ++ (?p & $x) :: _ -> hs ++ [x]
+   | _ -> xs
 
 def genCyclicGroup $e := takeUntilBy 1#(G.isId %1) (scanl G.* e (repeat1 e))
 
@@ -74,8 +77,8 @@ def G.product $g1 $g2 :=
 def G.** $g1 $g2 :=
   let pg := G.product g1 g2
    in match scanl
-              2#(let ng := union (2#%1 %1) (G.product (2#%2 %1) %2)
-                  in (ng, difference ng (2#%1 %1)))
+              (\(pg1, pg2) pg -> let ng := union pg1 (G.product pg2 pg)
+                                      in (ng, difference ng pg1))
               (pg, pg)
               (repeat1 pg) as list (group, set G.element) with
         | _ ++ ($g, []) :: _ -> g
